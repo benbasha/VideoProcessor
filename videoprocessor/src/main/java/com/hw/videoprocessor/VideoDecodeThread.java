@@ -3,7 +3,7 @@ package com.hw.videoprocessor;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.view.Surface;
 import com.hw.videoprocessor.util.CL;
 import com.hw.videoprocessor.util.FrameDropper;
