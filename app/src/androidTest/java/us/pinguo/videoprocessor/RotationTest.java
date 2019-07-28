@@ -2,8 +2,8 @@ package us.pinguo.videoprocessor;
 
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 import android.util.Log;
 import com.hw.videoprocessor.VideoProcessor;
 import com.hw.videoprocessor.util.CL;

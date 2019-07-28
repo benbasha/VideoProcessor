@@ -9,10 +9,12 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaMuxer;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Pair;
+
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.hw.videoprocessor.util.AudioFadeUtil;
 import com.hw.videoprocessor.util.AudioUtil;
 import com.hw.videoprocessor.util.CL;
@@ -164,6 +166,8 @@ public class VideoProcessor {
      */
     public static void processVideo(@NonNull Context context, @NonNull Processor processor) throws Exception {
 
+        VideoProgressListener listener = processor.listener;
+
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         retriever.setDataSource(processor.input);
         int originWidth = Integer.parseInt(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
@@ -253,13 +257,13 @@ public class VideoProcessor {
             extractor.seekTo(0, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
         }
 
-        VideoProgressAve progressAve = new VideoProgressAve(processor.listener);
+        VideoProgressAve progressAve = new VideoProgressAve(listener);
         progressAve.setSpeed(processor.speed);
         progressAve.setStartTimeMs(processor.startTimeMs == null ? 0 : processor.startTimeMs);
         progressAve.setEndTimeMs(processor.endTimeMs == null ? durationMs : processor.endTimeMs);
         AtomicBoolean decodeDone = new AtomicBoolean(false);
         CountDownLatch muxerStartLatch = new CountDownLatch(1);
-        VideoEncodeThread encodeThread = new VideoEncodeThread(extractor, mediaMuxer,processor.bitrate,
+        VideoEncodeThread encodeThread = new VideoEncodeThread(extractor, mediaMuxer, processor.bitrate,
                 resultWidth, resultHeight, processor.iFrameInterval, processor.frameRate == null ? DEFAULT_FRAME_RATE : processor.frameRate, videoIndex,
                 decodeDone, muxerStartLatch);
         int srcFrameRate = VideoUtil.getFrameRate(processor.input);
@@ -288,17 +292,38 @@ public class VideoProcessor {
             e.printStackTrace();
         }
 
+
         try {
             mediaMuxer.release();
             extractor.release();
+
+            if (listener != null) {
+                listener.onComplete();
+            }
         } catch (Exception e2) {
             CL.e(e2);
+
+            if (listener != null) {
+                listener.onError(e2);
+            }
         }
         if (encodeThread.getException() != null) {
+            if (listener != null) {
+                listener.onError(encodeThread.getException());
+            }
+
             throw encodeThread.getException();
         } else if (decodeThread.getException() != null) {
+            if (listener != null) {
+                listener.onError(decodeThread.getException());
+            }
+
             throw decodeThread.getException();
         } else if (audioProcessThread.getException() != null) {
+            if (listener != null) {
+                listener.onError(audioProcessThread.getException());
+            }
+
             throw audioProcessThread.getException();
         }
     }
